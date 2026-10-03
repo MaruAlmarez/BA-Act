@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <link rel="stylesheet" href="design.css">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.21.0/dist/jquery.validate.min.js"></script>
+</head>
+
+<body class="register-page">
+
+    <main class="container">
+        <section class="form-box register-box" aria-labelledby="register-title">
+
+            <h1 id="register-title">Register</h1>
+            <p class="welcome">Create your account</p>
+
+            <form id="register-form" action="#" method="post" novalidate>
+
+                <div class="input-group">
+                    <label for="name">Name</label>
+                    <input
+                        type="text"
+                        id="name"
+                        name="name"
+                        placeholder="Enter your name"
+                        required
+                    >
+                </div>
+
+                <div class="input-group">
+                    <label for="username">Username</label>
+                    <input
+                        type="text"
+                        id="username"
+                        name="username"
+                        placeholder="Choose a username"
+                        required
+                    >
+                </div>
+
+                <div class="input-group">
+                    <label for="email">Email Address</label>
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        placeholder="Enter your email"
+                        required
+                    >
+                </div>
+
+                <div class="input-group">
+                    <label for="password">Password</label>
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        data-password-input
+                        placeholder="Create a password"
+                        required
+                    >
+                    <button class="password-toggle" type="button" data-password-target="password" aria-label="Show password" aria-pressed="false">
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                        <span>Show</span>
+                    </button>
+                </div>
+
+                <div class="input-group">
+                    <label for="confirm-password">Confirm Password</label>
+                    <input
+                        type="password"
+                        id="confirm-password"
+                        name="confirm-password"
+                        data-password-input
+                        placeholder="Confirm your password"
+                        required
+                    >
+                    <button class="password-toggle" type="button" data-password-target="confirm-password" aria-label="Show password" aria-pressed="false">
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                        <span>Show</span>
+                    </button>
+                </div>
+
+                <button type="submit">Register</button>
+                <p id="register-feedback" class="form-feedback" role="status" aria-live="polite"></p>
+
+                <p class="account-text">
+                    Already have an account?
+                    <a href="login.html">Login Here</a>
+                </p>
+
+            </form>
+
+        </section>
+    </main>
+    </main>
+    <script>
+        $(function () {
+            const accountsStorageKey = "registeredAccounts";
+
+            $(".password-toggle").on("click", function () {
+                const $toggle = $(this);
+                const input = document.getElementById($toggle.attr("data-password-target"));
+                const isVisible = input.type === "text";
+
+                input.type = isVisible ? "password" : "text";
+                $toggle.attr("aria-pressed", String(!isVisible));
+                $toggle.attr("aria-label", isVisible ? "Show password" : "Hide password");
+                $toggle.find("span").text(isVisible ? "Show" : "Hide");
+            });
+
+            $("#register-form").validate({
+                rules: {
+                    name: { required: true, minlength: 2 },
+                    username: { required: true, minlength: 3 },
+                    email: { required: true, email: true },
+                    password: { required: true, minlength: 8 },
+                    "confirm-password": { required: true, equalTo: "#password" }
+                },
+                messages: {
+                    name: {
+                        required: "Please enter your name.",
+                        minlength: "Your name must be at least 2 characters long."
+                    },
+                    username: {
+                        required: "Please choose a username.",
+                        minlength: "Your username must be at least 3 characters long."
+                    },
+                    email: {
+                        required: "Please enter your email address.",
+                        email: "Please enter a valid email address."
+                    },
+                    password: {
+                        required: "Please create a password.",
+                        minlength: "Your password must be at least 8 characters long."
+                    },
+                    "confirm-password": {
+                        required: "Please confirm your password.",
+                        equalTo: "The passwords do not match."
+                    }
+                },
+                submitHandler: function (form) {
+                    const $feedback = $("#register-feedback");
+                    const username = form.elements.username.value.trim();
+                    let accounts;
+
+                    try {
+                        accounts = JSON.parse(localStorage.getItem(accountsStorageKey) || "[]");
+                        if (!Array.isArray(accounts)) {
+                            throw new Error("Saved account data is invalid.");
+                        }
+
+                        const usernameExists = accounts.some(function (savedAccount) {
+                            return typeof savedAccount.username === "string"
+                                && savedAccount.username.toLowerCase() === username.toLowerCase();
+                        });
+
+                        if (usernameExists) {
+                            $feedback
+                                .removeClass("success-message")
+                                .addClass("error-message")
+                                .text("That username is already registered. Please choose another.");
+                            return false;
+                        }
+
+                        accounts.push({
+                            name: form.elements.name.value.trim(),
+                            username: username,
+                            email: form.elements.email.value.trim(),
+                            password: form.elements.password.value
+                        });
+                        localStorage.setItem(accountsStorageKey, JSON.stringify(accounts));
+                    } catch (error) {
+                        $feedback
+                            .removeClass("success-message")
+                            .addClass("error-message")
+                            .text("We couldn't save your account in this browser. Please try again.");
+                        return false;
+                    }
+
+                    $feedback
+                        .removeClass("error-message")
+                        .addClass("success-message")
+                        .text("Registration successful! You can now log in with your username and password.");
+                    return false;
+                }
+            });
+
+            $("#register-form input").on("input", function () {
+                $("#register-feedback").removeClass("error-message success-message").empty();
+            });
+        });
+    </script>
+
+</body>
+</html>
